@@ -1,0 +1,35 @@
+html {
+    font-family: sans-serif;
+    background: white;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+}
+
+main {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: stretch;
+    width: 100%;
+    height: 100vh;
+    padding: 10vmin;
+    letter-spacing: 0.2rem;
+    font-weight: lighter;
+}
+
+.panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.osc {
+    border: 1px solid black;
+    margin: 1rem;
+    padding: 1rem;
+}
