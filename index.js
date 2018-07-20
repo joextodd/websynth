@@ -1,51 +1,127 @@
 const h = window.hyperapp.h;
 const app = window.hyperapp.app;
+const { withLogger } = window.hyperappLogger
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-// sine, square, sawtooth, triangle
-// ------------------------------------
-// volume/freq, pan, phase, distortion, delay
+const oscillators = ['sine', 'square', 'sawtooth', 'triangle']
+const effects = ['frequency', 'pan', 'phase', 'distortion', 'delay']
 
-const initialState = {
-  osc: null,
-  started: false,
-  volume: 0.0,
+const state = {}
+state.trail = Array(12).fill({ x: 0, y: 0 })
+state.osc = Object.assign(...oscillators.map((o) => ({[o]: {
+  playing: false,
+  volume: 1.0,
   freq: 440,
   pan: 0.5,
   phase: 1.0,
   distortion: 0.0,
   delay: 0.0,
-}
-
-const oscillators = ['sine', 'square', 'sawtooth', 'triangle']
-const state = Object.assign(...oscillators.map((k) => ({[k]: initialState})))
+}})))
+const osc = Object.assign(...oscillators.map((o) => ({[o]: audioContext.createOscillator()})))
 
 const actions = {
-  create: (type) => {
-    state[type].osc = audioContext.createOscillator()
-    state[type].osc.type = type
-    state[type].osc.frequency.setValueAtTime(state[type].freq, audioContext.currentTime)
-    state[type].osc.start()
+  create: t => {
+    osc[t].type = t
+    osc[t].frequency.setValueAtTime(state.osc[t].freq, audioContext.currentTime)
+    osc[t].start()
+    return state.osc[t]
   },
-  start: (type) => {
-    state[type].osc.connect(audioContext.destination)
-    state[type].started = true
+  start: t => {
+    osc[t].connect(audioContext.destination)
+    osc[t].playing = true
+    return state.osc[t]
   },
-  stop: (type) => {
-    state[type].osc.disconnect(audioContext.destination)
-    state[type].started = false
+  stop: t => {
+    osc[t].disconnect(audioContext.destination)
+    state.osc[t].playing = false
+    return state.osc[t]
   },
+  updateTrail: (i, x, y) => {
+    state.trail[i].x = x
+    state.trail[i].y = y
+    // return state.trail
+  }
 }
 
-const view = (state, actions) =>
-  h('main', {}, [
-    h('div', { class: 'panel' }, oscillators.map((type) => h('button', {
-      class: `osc ${type}`,
-      oncreate: (e) => actions.create(type),
-      onclick: (e) => state[type].started ? actions.stop(type) : actions.start(type)
-    }, type)).concat([
+const view = (s, a) =>
+  h('main', {
+    onmousemove: (e) => {
+      let x = e.pageX, y = e.pageY
+      state.trail.forEach((dot, index, dots) => {
+        let nextDot = dots[index + 1] || dots[0]
+        a.updateTrail(index, x, y)
+        x += (nextDot.x - dot.x) * .6
+        y += (nextDot.y - dot.y) * .6
+      })
+    }
+  }, [
+    h('div', { class: 'panel' }, oscillators.map((t) =>
+      h('button', {
+        class: `osc ${t}`,
+        oncreate: (e) => a.create(t),
+        onclick: (e) => s.osc[t].playing ? a.stop(t) : a.start(t)
+      }, t)
+    )),
+    h('div', { class: 'panel' }, effects.map((t) =>
+      h('button', {
+        class: `fx ${t}`,
+      }, t)
+    ))
+  ].concat(state.trail.map((d) => h('div', {
+    class: 'trail',
+    style: {
+      left: `${d.x}px`,
+      top: `${d.y}px`
+    }
+  }, []))))
 
-    ]))
-  ]) 
 
 app(state, actions, view, document.body)
+
+
+// const Dot = function() {
+//   this.x = 0;
+//   this.y = 0;
+//   this.node = (function(){
+//     const n = document.createElement('div');
+//     n.className = 'trail';
+//     document.body.appendChild(n);
+//     return n;
+//   }());
+// };
+
+// Dot.prototype.draw = function() {
+//   this.node.style.left = this.x + 'px'
+//   this.node.style.top = this.y + 'px'
+// };
+
+// This is the screen redraw function
+// function draw() {
+//   // Make sure the mouse position is set everytime
+//     // draw() is called.
+//   var x = mouse.x,
+//       y = mouse.y;
+
+//   // This loop is where all the 90s magic happens
+//   dots.forEach(function(dot, index, dots) {
+//     var nextDot = dots[index + 1] || dots[0];
+
+//     dot.x = x;
+//     dot.y = y;
+//     dot.draw();
+//     x += (nextDot.x - dot.x) * .6;
+//     y += (nextDot.y - dot.y) * .6;
+
+//   });
+// }
+
+// for (var i = 0; i < 12; i++) {
+//   state.trail.dots.push(new Dot());
+// }
+
+// addEventListener('mousemove', function(event) {
+//   state.trail.mouse.x = event.pageX;
+//   state.trail.mouse.y = event.pageY;
+//   // draw()
+// })
+
