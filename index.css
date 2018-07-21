@@ -39,7 +39,8 @@ button {
 }
 button:hover,
 button:active,
-button:disabled {
+button:disabled,
+button.active {
   background: #00caff;
   color: #111;
 }
@@ -52,7 +53,7 @@ button:focus {
 
 .panel {
     display: flex;
-    flex-direction: row;
+    flex-flow: row wrap;
     align-items: center;
     justify-content: center;
 }
