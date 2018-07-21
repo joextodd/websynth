@@ -26,29 +26,29 @@ main {
 }
 
 button {
-  background: #111;
-  border-radius: 0px;
-  border: 1px solid #00caff;
-  color: inherit;
-  font-size: 1rem;
-  font-weight: 100;
-  margin: .25rem;
-  outline: none;
-  padding: 1rem;
-  transition: background .2s;
+    background: #111;
+    border-radius: 0px;
+    border: 1px solid #00caff;
+    color: inherit;
+    font-size: 1rem;
+    font-weight: 100;
+    margin: .25rem;
+    outline: none;
+    padding: 1rem;
+    transition: background .2s;
 }
 button:hover,
 button:active,
 button:disabled,
 button.active {
-  background: #00caff;
-  color: #111;
+    background: #00caff;
+    color: #111;
 }
 button:active {
-  outline: 2px solid #00caff;
+    outline: 2px solid #00caff;
 }
 button:focus {
-  border: 1px solid #00caff;
+    border: 1px solid #00caff;
 }
 
 .panel {
