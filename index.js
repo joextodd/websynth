@@ -19,8 +19,6 @@ actions.osc = Object.assign(...oscillators.map(o => ({[o]: {
 
 const view = (s, a) =>
   h('main', {
-    ontouchstart: (e) => a.setPressed(true),
-    ontouchend: (e) => a.setPressed(false),
     onmousedown: (e) => a.setPressed(true),
     onmouseup: (e) => a.setPressed(false),
     onmousemove: (e) => {
@@ -30,7 +28,8 @@ const view = (s, a) =>
           case 'frequency': synth.setFrequency(s.selected, x * 3000, 1.0 - y); break;
           case 'pan': synth.setPanning(s.selected, x * 2 - 1); break;
           case 'filter': synth.setFilter(s.selected, x * 3000, y * 100); break;
-          case 'delay': synth.setDelay(s.selected, x * 100); break;
+          case 'distortion': synth.setDistortion(s.selected, x * 500); break;
+          case 'delay': synth.setDelay(s.selected, x, 1.0 - y); break;
         }
       }
       a.setX(e.pageX) && a.setY(e.pageY)
@@ -39,10 +38,9 @@ const view = (s, a) =>
     h('div', { class: 'panel' }, oscillators.map((t) =>
       h('button', {
         class: s.osc[t].playing ? `osc ${t} active` : `osc ${t}`,
+        oncreate: (e) => a.setFx(effects[0]) && synth.create(t),
         onclick: (e) => {
           a.setOsc(t)
-          s.osc[t].playing === null ?
-            a.setFx(effects[0]) && synth.create(t) : true
           s.osc[t].playing ?
             a.osc[t].setPlaying(false) && synth.stop(t) :
             a.osc[t].setPlaying(true) && synth.start(t)

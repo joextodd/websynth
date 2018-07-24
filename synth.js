@@ -8,7 +8,9 @@ const osc = Object.assign(...oscillators.map(o => ({[o]: null})))
 const volume = Object.assign(...oscillators.map(o => ({[o]: null})))
 const panner = Object.assign(...oscillators.map(o => ({[o]: null})))
 const filter = Object.assign(...oscillators.map(o => ({[o]: null})))
+const distortion = Object.assign(...oscillators.map(o => ({[o]: null})))
 const delay = Object.assign(...oscillators.map(o => ({[o]: null})))
+const feedback = Object.assign(...oscillators.map(o => ({[o]: null})))
 const reverb = Object.assign(...oscillators.map(o => ({[o]: null})))
 
 export const synth = {
@@ -17,8 +19,11 @@ export const synth = {
     volume[t] = volume[t] ? volume[t] : audioCtx.createGain()
     panner[t] = panner[t] ? panner[t] : audioCtx.createStereoPanner()
     filter[t] = filter[t] ? filter[t] : audioCtx.createBiquadFilter()
+    distortion[t] = distortion[t] ? distortion[t] : audioCtx.createWaveShaper()
     delay[t] = delay[t] ? delay[t] : audioCtx.createDelay(100)
+    feedback[t] = feedback[t] ? feedback[t] : audioCtx.createGain()
     reverb[t] = reverb[t] ? reverb[t] : audioCtx.createConvolver()
+    distortion[t].curve = makeDistortionCurve(400)
     // if (!analyser) {
     //   analyser = audioCtx.createAnalyser()
     //   analyser.fftSize = 1024
@@ -26,9 +31,14 @@ export const synth = {
     osc[t].type = t
     osc[t].frequency.value = 440
     osc[t].connect(panner[t])
+    osc[t].connect(delay[t])
+    osc[t].connect(distortion[t])
+    // delay[t].connect(feedback[t])
+    // feedback[t].connect(delay[t])
     panner[t].connect(filter[t])
-    filter[t].connect(delay[t])
+    filter[t].connect(volume[t])
     delay[t].connect(volume[t])
+    distortion[t].connect(volume[t])
     osc[t].start()
   },
   start: t => volume[t].connect(audioCtx.destination),
@@ -43,5 +53,24 @@ export const synth = {
     filter[t].frequency.value = f
     filter[t].detune.value = dt
   },
-  setDelay: (t, v) => (delay[t].delayTime.value = v)
+  setDistortion: (t, v) => (distortion[t].curve = makeDistortionCurve(v)),
+  setDelay: (t, x, y) => {
+    delay[t].delayTime.value = x
+    feedback[t].gain.value = y
+  }
 }
+
+function makeDistortionCurve(amount) {
+  var k = amount,
+    n_samples = typeof sampleRate === 'number' ? sampleRate : 44100,
+    curve = new Float32Array(n_samples),
+    deg = Math.PI / 180,
+    i = 0,
+    x;
+  for ( ; i < n_samples; ++i ) {
+    x = i * 2 / n_samples - 1;
+    curve[i] = (3 + k) * Math.atan(Math.sinh(x * 0.25) * 5) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
+
