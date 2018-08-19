@@ -27,10 +27,11 @@ const view = (s, a) =>
       let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
       if (s.pressed) {
         switch (s.fx) {
-          case 'frequency': synth.setFrequency(s.selected, x * 3000, 1.0 - y); break;
+          case 'frequency': synth.setFrequency(s.selected, x * 1000, 1.0 - y); break;
           case 'pan': synth.setPanning(s.selected, x * 2 - 1); break;
           case 'filter': synth.setFilter(s.selected, x * 3000, y * 100); break;
-          case 'delay': synth.setDelay(s.selected, x * 100); break;
+          case 'distortion': synth.setDistortion(s.selected, x * 1000); break;
+          case 'delay': synth.setDelay(s.selected, x * 10); break;
         }
       }
       a.setX(e.pageX) && a.setY(e.pageY)
