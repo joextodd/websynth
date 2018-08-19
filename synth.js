@@ -4,14 +4,16 @@ export const oscillators = ['sine', 'square', 'sawtooth', 'triangle']
 export const effects = ['frequency', 'pan', 'filter', 'distortion', 'delay', 'reverb']
 
 let analyser = null
-const osc = Object.assign(...oscillators.map(o => ({[o]: null})))
-const volume = Object.assign(...oscillators.map(o => ({[o]: null})))
-const panner = Object.assign(...oscillators.map(o => ({[o]: null})))
-const filter = Object.assign(...oscillators.map(o => ({[o]: null})))
-const distortion = Object.assign(...oscillators.map(o => ({[o]: null})))
-const delay = Object.assign(...oscillators.map(o => ({[o]: null})))
-const feedback = Object.assign(...oscillators.map(o => ({[o]: null})))
-const reverb = Object.assign(...oscillators.map(o => ({[o]: null})))
+const init = () => Object.assign(...oscillators.map(o => ({[o]: null})))
+const osc = init(),
+      volume = init(),
+      panner = init(),
+      filter = init(),
+      distortion = init(),
+      delay = init(),
+      delayGain = init(),
+      reverb = init(),
+      reverbGain = init();
 
 export const synth = {
   create: t => {
@@ -20,48 +22,41 @@ export const synth = {
     panner[t] = panner[t] ? panner[t] : audioCtx.createStereoPanner()
     filter[t] = filter[t] ? filter[t] : audioCtx.createBiquadFilter()
     distortion[t] = distortion[t] ? distortion[t] : audioCtx.createWaveShaper()
-    delay[t] = delay[t] ? delay[t] : audioCtx.createDelay(100)
-    feedback[t] = feedback[t] ? feedback[t] : audioCtx.createGain()
+    delay[t] = delay[t] ? delay[t] : audioCtx.createDelay(1)
+    delayGain[t] = delayGain[t] ? delayGain[t] : audioCtx.createGain()
     reverb[t] = reverb[t] ? reverb[t] : audioCtx.createConvolver()
-    distortion[t].curve = makeDistortionCurve(400)
-    // if (!analyser) {
-    //   analyser = audioCtx.createAnalyser()
-    //   analyser.fftSize = 1024
-    // }
+    reverbGain[t] = reverbGain[t] ? reverbGain[t] : audioCtx.createGain()
+    reverb[t].buffer = impulseResponse(1.0, true, false)
+
     osc[t].type = t
     osc[t].frequency.value = 440
     osc[t].connect(panner[t])
-    osc[t].connect(delay[t])
-    osc[t].connect(distortion[t])
-    // delay[t].connect(feedback[t])
-    // feedback[t].connect(delay[t])
     panner[t].connect(filter[t])
+    filter[t].type = 'bandpass'
     filter[t].connect(distortion[t])
-    distortion[t].connect(delay[t])
-    delay[t].connect(volume[t])
-    // reverb[t].connect(volume[t])
+    distortion[t].oversample = '4x'
+    distortion[t].connect(volume[t])
+
+    osc[t].connect(delay[t])
+    delay[t].connect(delayGain[t])
+    delayGain[t].value = 0
+    delayGain[t].connect(volume[t])
+
+    osc[t].connect(reverb[t])
+    reverb[t].connect(reverbGain[t])
+    reverbGain[t].value = 0
+    reverbGain[t].connect(volume[t])
     osc[t].start()
   },
   start: t => volume[t].connect(audioCtx.destination),
   stop: t => volume[t].disconnect(audioCtx.destination),
   getSpectrum: () => analyser ? analyser.getFloatFrequencyData() : [],
-  setFrequency: (t, f, v) => {
-    // volume[t].gain.value = v
-    osc[t].frequency.value = f
-  },
+  setFrequency: (t, f, v) => (osc[t].frequency.value = f),
   setPanning: (t, v) => (panner[t].pan.value = v),
-  setFilter: (t, f, dt) => {
-    filter[t].frequency.value = f
-    filter[t].detune.value = dt
-  },
-  setDistortion: (t, v) => {
-    distortion[t].curve = makeDistortionCurve(v)
-    distortion[t].oversample = '4x'
-  },
+  setFilter: (t, f, dt) => (filter[t].frequency.value = f),
+  setDistortion: (t, v) => (distortion[t].curve = makeDistortionCurve(v)),
   setDelay: (t, v) => (delay[t].delayTime.value = v),
-  setReverb: (t, v) => {
-    reverb[t].buffer = impulseResponse(1.0, true, false)
-  }
+  setReverb: (t, v) => (reverbGain[t].gain.value = v),
 }
 
 function makeDistortionCurve(amount) {
