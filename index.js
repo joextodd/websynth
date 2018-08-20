@@ -1,6 +1,6 @@
 const h = window.hyperapp.h
 const app = window.hyperapp.app
-import { oscillators, effects, synth } from './synth.js'
+import { oscillators, effects, synth, keys, notes } from './synth.js'
 
 const initialState = { playing: null }
 const state = { selected: null, pressed: false, fx: effects[0], x: 0, y: 0}
@@ -23,17 +23,23 @@ const view = (s, a) =>
     onmouseup: e => a.setPressed(false),
     onmousemove: e => {
       let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
-      if (s.pressed) {
+      if (s.selected && s.pressed) {
         switch (s.fx) {
-          case 'frequency': synth.setFrequency(s.selected, x * 1000, 1.0 - y); break;
-          case 'pan': synth.setPanning(s.selected, x * 2 - 1); break;
-          case 'filter': synth.setFilter(s.selected, x * 3000, y * 100); break;
-          case 'distortion': synth.setDistortion(s.selected, x * 1000); break;
-          case 'delay': synth.setDelay(s.selected, x * 10, 1.0 - y); break;
-          case 'reverb': synth.setReverb(s.selected, x); break;
+          case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
+          case 'pan': synth.setPanning(x * 2 - 1); break;
+          case 'filter': synth.setFilter(x * 3000, y * 100); break;
+          case 'distortion': synth.setDistortion(x * 250); break;
+          case 'delay': synth.setDelay(x * 10, 1.0 - y); break;
+          case 'reverb': synth.setReverb(x); break;
         }
       }
       a.setX(e.pageX) && a.setY(e.pageY)
+    },
+    oncreate: e => {
+      window.onkeypress = e => {
+        keys.indexOf(e.key) >= 0 &&
+          synth.setFrequency(notes[keys.indexOf(e.key)])
+      }
     }
   }, [
     h('div', { class: 'panel' }, oscillators.map(t =>
@@ -42,6 +48,7 @@ const view = (s, a) =>
         oncreate: e => a.setFx(effects[0]) && synth.create(t),
         onclick: e => {
           a.setOsc(t)
+          synth.setType(t)
           s.osc[t].playing ?
             a.osc[t].setPlaying(false) && synth.stop(t) :
             a.osc[t].setPlaying(true) && synth.start(t)

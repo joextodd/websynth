@@ -3,8 +3,14 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
 export const oscillators = ['sine', 'square', 'sawtooth', 'triangle']
 export const effects = ['frequency', 'pan', 'filter', 'distortion', 'delay', 'reverb']
 
+let s = null
+const c = 523.25
+const a = 2 ** (1 / 12.0)
+export const keys = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k']
+export const notes = Array(keys.length).fill().map((_, i) => c * (a ** i))
+
 let analyser = null
-const init = () => Object.assign(...oscillators.map(o => ({[o]: null})))
+const init = () => Object.assign(...oscillators.map(o => ({ [o]: null })))
 const osc = init(),
       volume = init(),
       panner = init(),
@@ -16,47 +22,47 @@ const osc = init(),
       reverbGain = init();
 
 export const synth = {
-  create: t => {
-    osc[t] = osc[t] ? osc[t] : audioCtx.createOscillator()
-    volume[t] = volume[t] ? volume[t] : audioCtx.createGain()
-    panner[t] = panner[t] ? panner[t] : audioCtx.createStereoPanner()
-    filter[t] = filter[t] ? filter[t] : audioCtx.createBiquadFilter()
-    distortion[t] = distortion[t] ? distortion[t] : audioCtx.createWaveShaper()
-    delay[t] = delay[t] ? delay[t] : audioCtx.createDelay(1)
-    delayGain[t] = delayGain[t] ? delayGain[t] : audioCtx.createGain()
-    reverb[t] = reverb[t] ? reverb[t] : audioCtx.createConvolver()
-    reverbGain[t] = reverbGain[t] ? reverbGain[t] : audioCtx.createGain()
-    reverb[t].buffer = impulseResponse(1.0, true, false)
+  create: s => {
+    osc[s] = osc[s] ? osc[s] : audioCtx.createOscillator()
+    volume[s] = volume[s] ? volume[s] : audioCtx.createGain()
+    panner[s] = panner[s] ? panner[s] : audioCtx.createStereoPanner()
+    filter[s] = filter[s] ? filter[s] : audioCtx.createBiquadFilter()
+    distortion[s] = distortion[s] ? distortion[s] : audioCtx.createWaveShaper()
+    delay[s] = delay[s] ? delay[s] : audioCtx.createDelay(1)
+    delayGain[s] = delayGain[s] ? delayGain[s] : audioCtx.createGain()
+    reverb[s] = reverb[s] ? reverb[s] : audioCtx.createConvolver()
+    reverbGain[s] = reverbGain[s] ? reverbGain[s] : audioCtx.createGain()
+    reverb[s].buffer = impulseResponse(1.0, true, false)
 
-    osc[t].type = t
-    osc[t].frequency.value = 440
-    osc[t].connect(panner[t])
-    panner[t].connect(filter[t])
-    filter[t].type = 'bandpass'
-    filter[t].connect(distortion[t])
-    distortion[t].oversample = '4x'
-    distortion[t].connect(volume[t])
+    osc[s].type = s
+    osc[s].frequency.value = 440
+    osc[s].connect(panner[s])
+    panner[s].connect(filter[s])
+    filter[s].type = 'bandpass'
+    filter[s].connect(distortion[s])
+    distortion[s].oversample = '4x'
+    distortion[s].connect(volume[s])
 
-    osc[t].connect(delay[t])
-    delay[t].connect(delayGain[t])
-    delayGain[t].value = 0
-    delayGain[t].connect(volume[t])
+    osc[s].connect(delay[s])
+    delay[s].connect(delayGain[s])
+    delayGain[s].connect(volume[s])
 
-    osc[t].connect(reverb[t])
-    reverb[t].connect(reverbGain[t])
-    reverbGain[t].value = 0
-    reverbGain[t].connect(volume[t])
-    osc[t].start()
+    osc[s].connect(reverb[s])
+    reverb[s].connect(reverbGain[s])
+    reverbGain[s].gain.value = 0
+    reverbGain[s].connect(volume[s])
+    osc[s].start()
   },
-  start: t => volume[t].connect(audioCtx.destination),
-  stop: t => volume[t].disconnect(audioCtx.destination),
+  setType: ns => (s = ns),
+  start: s => volume[s].connect(audioCtx.destination),
+  stop: s => volume[s].disconnect(audioCtx.destination),
   getSpectrum: () => analyser ? analyser.getFloatFrequencyData() : [],
-  setFrequency: (t, f, v) => (osc[t].frequency.value = f),
-  setPanning: (t, v) => (panner[t].pan.value = v),
-  setFilter: (t, f, dt) => (filter[t].frequency.value = f),
-  setDistortion: (t, v) => (distortion[t].curve = makeDistortionCurve(v)),
-  setDelay: (t, v) => (delay[t].delayTime.value = v),
-  setReverb: (t, v) => (reverbGain[t].gain.value = v),
+  setFrequency: f => (osc[s].frequency.value = f),
+  setPanning: v => (panner[s].pan.value = v),
+  setFilter: f => (filter[s].frequency.value = f),
+  setDistortion: v => (distortion[s].curve = makeDistortionCurve(v)),
+  setDelay: v => (delay[s].delayTime.value = v),
+  setReverb: v => (reverbGain[s].gain.value = v),
 }
 
 function makeDistortionCurve(amount) {
