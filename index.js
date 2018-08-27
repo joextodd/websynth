@@ -1,12 +1,29 @@
 const h = window.hyperapp.h
 const app = window.hyperapp.app
-import { oscillators, effects, synth, keys, notes } from './synth.js'
+const { withFx, action, frame } = window.hyperappFx
+import { oscillators, effects, synth, keys, notes, waveform } from './synth.js'
+import { draw } from './scope.js'
 
 const initialState = { playing: null }
-const state = { selected: null, pressed: false, fx: effects[0], x: 0, y: 0}
+const state = {
+  selected: null, pressed: false,
+  x: 0, y: 0, time: 0, delta: 0,
+  fx: effects[0]
+}
 state.osc = Object.assign(...oscillators.map((o) => ({[o]: initialState})))
 
 const actions = {
+  init: () => frame('update'),
+  update: time => [
+    action('incTime', 0.1),
+    action('drawCanvas'),
+    frame('update')
+  ],
+  incTime: time => ({ time: lastTime, delta: lastDelta }) => ({
+    time,
+    delta: time && lastTime ? time - lastTime : lastDelta
+  }),
+  drawCanvas: () => synth.getSpectrum() || draw(),
   setX: x => ({ x }),
   setY: y => ({ y }),
   setPressed: pressed => ({ pressed }),
@@ -56,7 +73,11 @@ const view = (s, a) =>
         }
       }, t)
     )),
-    h('canvas', {}, []),
+    h('canvas', {
+      id: 'canvas',
+      width: waveform.length,
+      height: window.innerHeight * 0.75
+    }, []),
     h('div', { class: 'panel' }, effects.map(t =>
       h('button', {
         class: s.fx === t ? `fx ${t} active` : `fx ${t}`,
@@ -69,4 +90,4 @@ const view = (s, a) =>
     }, [])
   ])
 
-app(state, actions, view, document.body)
+withFx(app)(state, actions, view, document.body).init()

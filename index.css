@@ -26,10 +26,8 @@ main {
 }
 
 canvas {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100vw;
+    margin-left: -5vmin;
 }
 
 button {

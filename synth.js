@@ -9,7 +9,9 @@ const a = 2 ** (1 / 12.0)
 export const keys = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k']
 export const notes = Array(keys.length).fill().map((_, i) => c * (a ** i))
 
-let analyser = null
+let analyser = audioCtx.createAnalyser()
+export const waveform = new Float32Array(analyser.frequencyBinCount)
+
 const init = () => Object.assign(...oscillators.map(o => ({ [o]: null })))
 const osc = init(),
       volume = init(),
@@ -51,19 +53,26 @@ export const synth = {
     reverb[s].connect(reverbGain[s])
     reverbGain[s].gain.value = 0
     reverbGain[s].connect(volume[s])
+
     osc[s].start()
   },
   resume: () => audioCtx.state === 'suspended' ? audioCtx.resume() : null,
   setType: ns => (s = ns),
-  start: s => volume[s].connect(audioCtx.destination),
-  stop: s => volume[s].disconnect(audioCtx.destination),
-  getSpectrum: () => analyser ? analyser.getFloatFrequencyData() : [],
+  start: s => {
+    volume[s].connect(audioCtx.destination)
+    volume[s].connect(analyser)
+  },
+  stop: s => {
+    volume[s].disconnect(audioCtx.destination)
+    volume[s].disconnect(analyser)
+  },
   setFrequency: f => (osc[s].frequency.value = f),
   setPanning: v => (panner[s].pan.value = v),
   setFilter: f => (filter[s].frequency.value = f),
   setDistortion: v => (distortion[s].curve = makeDistortionCurve(v)),
   setDelay: v => (delay[s].delayTime.value = v),
   setReverb: v => (reverbGain[s].gain.value = v),
+  getSpectrum: () => analyser.getFloatTimeDomainData(waveform),
 }
 
 function makeDistortionCurve(amount) {
