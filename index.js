@@ -47,6 +47,7 @@ const view = (s, a) =>
         class: s.osc[t].playing ? `osc ${t} active` : `osc ${t}`,
         oncreate: e => a.setFx(effects[0]) && synth.create(t),
         onclick: e => {
+          synth.resume()
           a.setOsc(t)
           synth.setType(t)
           s.osc[t].playing ?
@@ -55,6 +56,7 @@ const view = (s, a) =>
         }
       }, t)
     )),
+    h('canvas', {}, []),
     h('div', { class: 'panel' }, effects.map(t =>
       h('button', {
         class: s.fx === t ? `fx ${t} active` : `fx ${t}`,

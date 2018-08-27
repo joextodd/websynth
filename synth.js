@@ -53,6 +53,7 @@ export const synth = {
     reverbGain[s].connect(volume[s])
     osc[s].start()
   },
+  resume: () => audioCtx.state === 'suspended' ? audioCtx.resume() : null,
   setType: ns => (s = ns),
   start: s => volume[s].connect(audioCtx.destination),
   stop: s => volume[s].disconnect(audioCtx.destination),

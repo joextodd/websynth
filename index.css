@@ -20,9 +20,16 @@ main {
     justify-content: space-between;
     width: 100%;
     height: 100vh;
-    padding: 10vmin;
+    padding: 10vmin 5vmin;
     letter-spacing: 0.2rem;
     font-weight: lighter;
+}
+
+canvas {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 button {
