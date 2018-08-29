@@ -72,7 +72,10 @@ export const synth = {
   setDistortion: v => (distortion[s].curve = makeDistortionCurve(v)),
   setDelay: v => (delay[s].delayTime.value = v),
   setReverb: v => (reverbGain[s].gain.value = v),
-  getSpectrum: () => analyser.getFloatTimeDomainData(waveform),
+  getSpectrum: () => {
+    analyser.getFloatTimeDomainData(waveform)
+    console.log(waveform)
+  }
 }
 
 function makeDistortionCurve(amount) {

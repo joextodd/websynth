@@ -9,7 +9,7 @@ export const draw = () => {
 
     ctx.strokeStyle = '#00caff'
     for (let x = 0; x < waveform.length; x++) {
-      const y = (0.5 + waveform[x] / 2) * canvas.height;
+      const y = (0.5 + waveform[x] / 4) * canvas.height;
       x == 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
     }
     ctx.stroke()

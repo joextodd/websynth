@@ -26,8 +26,11 @@ main {
 }
 
 canvas {
+    position: fixed;
+    top: 0;
     width: 100vw;
     margin-left: -5vmin;
+    height: 100vh;
 }
 
 button {

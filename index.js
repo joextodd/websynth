@@ -76,7 +76,7 @@ const view = (s, a) =>
     h('canvas', {
       id: 'canvas',
       width: waveform.length,
-      height: window.innerHeight * 0.75
+      height: window.innerHeight
     }, []),
     h('div', { class: 'panel' }, effects.map(t =>
       h('button', {
