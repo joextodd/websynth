@@ -74,7 +74,6 @@ export const synth = {
   setReverb: v => (reverbGain[s].gain.value = v),
   getSpectrum: () => {
     analyser.getFloatTimeDomainData(waveform)
-    console.log(waveform)
   }
 }
 
@@ -86,8 +85,8 @@ function makeDistortionCurve(amount) {
     i = 0,
     x;
   for ( ; i < n_samples; ++i ) {
-    x = i * 2 / n_samples - 1;
-    curve[i] = (3 + k) * Math.atan(Math.sinh(x * 0.25) * 5) / (Math.PI + k * Math.abs(x));
+    x = i * 2 / n_samples - 1
+    curve[i] = (3 + k) * Math.atan(Math.sinh(x * 0.25) * 5) / (Math.PI + k * Math.abs(x))
   }
   return curve;
 }
