@@ -4,6 +4,7 @@ const { withFx, action, frame } = window.hyperappFx
 import { oscillators, effects, synth, keys, notes, waveform } from './synth.js'
 import { draw } from './scope.js'
 
+const isSafari = () => navigator.vendor.toLowerCase() === 'apple computer, inc.'
 const initialState = { playing: null }
 const state = {
   selected: null, pressed: false,
@@ -12,9 +13,23 @@ const state = {
 }
 state.osc = Object.assign(...oscillators.map((o) => ({[o]: initialState})))
 
+const move = (s, a) => e => {
+  let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
+  if (s.selected && s.pressed) {
+    switch (s.fx) {
+      case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
+      case 'filter': synth.setFilter(x * 3000, y * 100); break;
+      case 'distortion': synth.setDistortion(x * 250); break;
+      case 'delay': synth.setDelay(x * 10, 1.0 - y); break;
+      case 'reverb': synth.setReverb(x); break;
+    }
+  }
+  a.setX(e.pageX) && a.setY(e.pageY)
+}
+
 const actions = {
   init: () => frame('update'),
-  update: time => [
+  update: time => isSafari() ? [] : [
     action('incTime', 0.1),
     action('drawCanvas'),
     frame('update')
@@ -36,22 +51,12 @@ actions.osc = Object.assign(...oscillators.map(o => ({[o]: {
 
 const view = (s, a) =>
   h('main', {
+    ontouchstart: e => a.setPressed(true),
+    ontouchend: e => a.setPressed(false),
+    ontouchmove: move(s, a),
     onmousedown: e => a.setPressed(true),
     onmouseup: e => a.setPressed(false),
-    onmousemove: e => {
-      let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
-      if (s.selected && s.pressed) {
-        switch (s.fx) {
-          case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
-          case 'pan': synth.setPanning(x * 2 - 1); break;
-          case 'filter': synth.setFilter(x * 3000, y * 100); break;
-          case 'distortion': synth.setDistortion(x * 250); break;
-          case 'delay': synth.setDelay(x * 10, 1.0 - y); break;
-          case 'reverb': synth.setReverb(x); break;
-        }
-      }
-      a.setX(e.pageX) && a.setY(e.pageY)
-    },
+    onmousemove: move(s, a),
     oncreate: e => {
       window.onkeypress = e => {
         keys.indexOf(e.key) >= 0 &&
