@@ -1,7 +1,7 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
 
 export const oscillators = ['sine', 'square', 'sawtooth', 'triangle']
-export const effects = ['frequency', 'pan', 'filter', 'distortion', 'delay', 'reverb']
+export const effects = ['frequency', 'filter', 'distortion', 'delay', 'reverb']
 
 let s = null
 const c = 523.25
@@ -15,7 +15,6 @@ export const waveform = new Float32Array(analyser.frequencyBinCount)
 const init = () => Object.assign(...oscillators.map(o => ({ [o]: null })))
 const osc = init(),
       volume = init(),
-      panner = init(),
       filter = init(),
       distortion = init(),
       delay = init(),
@@ -27,7 +26,6 @@ export const synth = {
   create: s => {
     osc[s] = osc[s] ? osc[s] : audioCtx.createOscillator()
     volume[s] = volume[s] ? volume[s] : audioCtx.createGain()
-    panner[s] = panner[s] ? panner[s] : audioCtx.createStereoPanner()
     filter[s] = filter[s] ? filter[s] : audioCtx.createBiquadFilter()
     distortion[s] = distortion[s] ? distortion[s] : audioCtx.createWaveShaper()
     delay[s] = delay[s] ? delay[s] : audioCtx.createDelay(1)
@@ -38,8 +36,7 @@ export const synth = {
 
     osc[s].type = s
     osc[s].frequency.value = 440
-    osc[s].connect(panner[s])
-    panner[s].connect(filter[s])
+    osc[s].connect(filter[s])
     filter[s].type = 'bandpass'
     filter[s].connect(distortion[s])
     distortion[s].oversample = '4x'
@@ -67,7 +64,6 @@ export const synth = {
     volume[s].disconnect(analyser)
   },
   setFrequency: f => (osc[s].frequency.value = f),
-  setPanning: v => (panner[s].pan.value = v),
   setFilter: f => (filter[s].frequency.value = f),
   setDistortion: v => (distortion[s].curve = makeDistortionCurve(v)),
   setDelay: v => (delay[s].delayTime.value = v),
