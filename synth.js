@@ -17,6 +17,7 @@ const osc = init(),
       volume = init(),
       filter = init(),
       distortion = init(),
+      distortionGain = init(),
       delay = init(),
       delayGain = init(),
       reverb = init(),
@@ -28,7 +29,8 @@ export const synth = {
     volume[s] = volume[s] ? volume[s] : audioCtx.createGain()
     filter[s] = filter[s] ? filter[s] : audioCtx.createBiquadFilter()
     distortion[s] = distortion[s] ? distortion[s] : audioCtx.createWaveShaper()
-    delay[s] = delay[s] ? delay[s] : audioCtx.createDelay(1)
+    distortionGain[s] = distortionGain[s] ? distortionGain[s] : audioCtx.createGain()
+    delay[s] = delay[s] ? delay[s] : audioCtx.createDelay(3)
     delayGain[s] = delayGain[s] ? delayGain[s] : audioCtx.createGain()
     reverb[s] = reverb[s] ? reverb[s] : audioCtx.createConvolver()
     reverbGain[s] = reverbGain[s] ? reverbGain[s] : audioCtx.createGain()
@@ -37,10 +39,15 @@ export const synth = {
     osc[s].type = s
     osc[s].frequency.value = 440
     osc[s].connect(filter[s])
-    filter[s].type = 'bandpass'
-    filter[s].connect(distortion[s])
+    filter[s].type = 'lowpass'
+    filter[s].connect(volume[s])
+
+    osc[s].connect(distortion[s])
+    distortion[s].curve = makeDistortionCurve(400)
     distortion[s].oversample = '4x'
-    distortion[s].connect(volume[s])
+    distortion[s].connect(distortionGain[s])
+    distortionGain[s].gain.value = 0
+    distortionGain[s].connect(volume[s])
 
     osc[s].connect(delay[s])
     delay[s].connect(delayGain[s])
@@ -64,9 +71,12 @@ export const synth = {
     volume[s].disconnect(analyser)
   },
   setFrequency: f => (osc[s].frequency.value = f),
-  setFilter: f => (filter[s].frequency.value = f),
-  setDistortion: v => (distortion[s].curve = makeDistortionCurve(v)),
-  setDelay: v => (delay[s].delayTime.value = v),
+  setFilter: (f, v) => {
+    filter[s].frequency.value = f
+    filter[s].gain.value = v
+  },
+  setDistortion: v => (distortionGain[s].gain.value = v),
+  setDelay: v => (delay[s].delayTime.value = v),  // TODO: fix distortion on change
   setReverb: v => (reverbGain[s].gain.value = v),
   getSpectrum: () => {
     analyser.getFloatTimeDomainData(waveform)
@@ -97,7 +107,7 @@ function impulseResponse(duration, decay, reverse) {
     decay = 2.0;
   for (var i = 0; i < length; i++) {
     var n = reverse ? length - i : i;
-    impulseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
+    impulseData[i] = Math.random() * Math.pow(1 - n / length, decay);
   }
   return impulse;
 }

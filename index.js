@@ -18,9 +18,9 @@ const move = (s, a) => e => {
   if (s.selected && s.pressed) {
     switch (s.fx) {
       case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
-      case 'filter': synth.setFilter(x * 3000, y * 100); break;
-      case 'distortion': synth.setDistortion(x * 250); break;
-      case 'delay': synth.setDelay(x * 10, 1.0 - y); break;
+      case 'filter': synth.setFilter(x * 1000, 1.0 - y); break;
+      case 'distortion': synth.setDistortion(x); break;
+      case 'delay': synth.setDelay(x * 3, 1.0 - y); break;
       case 'reverb': synth.setReverb(x); break;
     }
   }
