@@ -34,12 +34,12 @@ export const synth = {
     delayGain[s] = delayGain[s] ? delayGain[s] : audioCtx.createGain()
     reverb[s] = reverb[s] ? reverb[s] : audioCtx.createConvolver()
     reverbGain[s] = reverbGain[s] ? reverbGain[s] : audioCtx.createGain()
-    reverb[s].buffer = impulseResponse(1.0, true, false)
+    reverb[s].buffer = impulseResponse(1.0, 1.0, false, audioCtx.sampleRate)
 
     osc[s].type = s
     osc[s].frequency.value = 440
     osc[s].connect(filter[s])
-    filter[s].type = 'lowpass'
+    filter[s].type = 'bandpass'
     filter[s].connect(volume[s])
 
     osc[s].connect(distortion[s])
@@ -63,29 +63,44 @@ export const synth = {
   resume: () => audioCtx.state === 'suspended' ? audioCtx.resume() : null,
   setType: ns => (s = ns),
   start: s => {
+    volume[s].gain.value = 0.5
     volume[s].connect(audioCtx.destination)
     volume[s].connect(analyser)
   },
   stop: s => {
+    volume[s].gain.value = 0
     volume[s].disconnect(audioCtx.destination)
     volume[s].disconnect(analyser)
   },
-  setFrequency: f => (osc[s].frequency.value = f),
+  setFrequency: (f, v) => {
+    osc[s].frequency.value = f
+    volume[s].gain.value = v ? v : volume[s].gain.value
+  },
   setFilter: (f, v) => {
-    filter[s].frequency.value = f
-    filter[s].gain.value = v
+    filter[s].frequency.setValueAtTime(f, audioCtx.currentTime)
+    filter[s].Q.setValueAtTime(v, audioCtx.currentTime)
   },
   setDistortion: v => (distortionGain[s].gain.value = v),
-  setDelay: v => (delay[s].delayTime.value = v),  // TODO: fix distortion on change
-  setReverb: v => (reverbGain[s].gain.value = v),
+  setDelay: (t, v) => {
+    delay[s].delayTime.setValueAtTime(t, audioCtx.currentTime)
+    delayGain[s].gain.value = v
+  },
+  setReverb: (t, v) => {
+    reverb[s].buffer = impulseResponse(1.0, 10 - t, false, audioCtx.sampleRate)
+    reverbGain[s].gain.value = v
+  },
   getSpectrum: () => {
     analyser.getFloatTimeDomainData(waveform)
   }
 }
 
-function makeDistortionCurve(amount) {
+/**
+ * Create sigmoid distortion curve
+ * https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode
+ */
+export function makeDistortionCurve(amount, sampleRate = 44100) {
   var k = amount,
-    n_samples = typeof sampleRate === 'number' ? sampleRate : 44100,
+    n_samples = sampleRate,
     curve = new Float32Array(n_samples),
     deg = Math.PI / 180,
     i = 0,
@@ -97,17 +112,17 @@ function makeDistortionCurve(amount) {
   return curve;
 }
 
-function impulseResponse(duration, decay, reverse) {
-  var sampleRate = audioCtx.sampleRate;
-  var length = sampleRate * duration;
-  var impulse = audioCtx.createBuffer(1, length, sampleRate);
-  var impulseData = impulse.getChannelData(0);
+/**
+ * Create a random impulse response, decaying at the set rate.
+ */
+export function impulseResponse(duration, decay = 2.0, reverse = false, sampleRate = 44100) {
+  var length = sampleRate * duration
+  var impulse = audioCtx.createBuffer(1, length, sampleRate)
+  var impulseData = impulse.getChannelData(0)
 
-  if (!decay)
-    decay = 2.0;
   for (var i = 0; i < length; i++) {
-    var n = reverse ? length - i : i;
-    impulseData[i] = Math.random() * Math.pow(1 - n / length, decay);
+    var n = reverse ? length - i : i
+    impulseData[i] = Math.random() * Math.pow(1 - n / length, decay)
   }
   return impulse;
 }

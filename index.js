@@ -1,8 +1,8 @@
 const h = window.hyperapp.h
 const app = window.hyperapp.app
-const { withFx, action, frame } = window.hyperappFx
-import { oscillators, effects, synth, keys, notes, waveform } from './synth.js'
-import { draw } from './scope.js'
+const { withFx, throttle, action, frame } = window.hyperappFx
+import { oscillators, effects, synth, keys, notes, waveform } from './src/synth.js'
+import { draw } from './src/scope.js'
 
 const isSafari = () => navigator.vendor.toLowerCase() === 'apple computer, inc.'
 const initialState = { playing: null }
@@ -13,24 +13,10 @@ const state = {
 }
 state.osc = Object.assign(...oscillators.map((o) => ({[o]: initialState})))
 
-const move = (s, a) => e => {
-  let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
-  if (s.selected && s.pressed) {
-    switch (s.fx) {
-      case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
-      case 'filter': synth.setFilter(x * 1000, 1.0 - y); break;
-      case 'distortion': synth.setDistortion(x); break;
-      case 'delay': synth.setDelay(x * 3, 1.0 - y); break;
-      case 'reverb': synth.setReverb(x); break;
-    }
-  }
-  a.setX(e.pageX) && a.setY(e.pageY)
-}
-
 const actions = {
   init: () => frame('update'),
   update: time => isSafari() ? [] : [
-    action('incTime', 0.1),
+    action('incTime', 0.03),
     action('drawCanvas'),
     frame('update')
   ],
@@ -39,11 +25,26 @@ const actions = {
     delta: time && lastTime ? time - lastTime : lastDelta
   }),
   drawCanvas: () => synth.getSpectrum() || draw(),
-  setX: x => ({ x }),
-  setY: y => ({ y }),
   setPressed: pressed => ({ pressed }),
   setOsc: selected => ({ selected }),
   setFx: fx => ({ fx }),
+  setDelay: d => synth.setDelay(d.x, d.y),
+  setReverb: d => synth.setReverb(d.x, d.y),
+  throttleDelay: d => throttle(500, 'setDelay', d),
+  throttleReverb: d => throttle(250, 'setReverb', d),
+  move: e => (s, a) => {
+    let x = e.pageX / window.innerWidth, y = e.pageY / window.innerHeight
+    if (s.selected && s.pressed) {
+      switch (s.fx) {
+        case 'frequency': synth.setFrequency(x * 1000, 1.0 - y); break;
+        case 'filter': synth.setFilter(x * 20000, 1.0 - y); break;
+        case 'distortion': synth.setDistortion(x); break;
+        case 'delay': a.throttleDelay({ x: x * 3, y: 1.0 - y }); break;
+        case 'reverb': a.throttleReverb({ x: (x + 0.1) * 10, y: 1.0 - y }); break;
+      }
+    }
+    return { x: e.pageX, y: e.pageY }
+  }
 }
 actions.osc = Object.assign(...oscillators.map(o => ({[o]: {
   setPlaying: playing => ({ playing })
@@ -51,12 +52,12 @@ actions.osc = Object.assign(...oscillators.map(o => ({[o]: {
 
 const view = (s, a) =>
   h('main', {
-    ontouchstart: e => a.setPressed(true),
+    ontouchstart: e => e.srcElement.type !== 'submit' && a.setPressed(true),
     ontouchend: e => a.setPressed(false),
-    ontouchmove: move(s, a),
-    onmousedown: e => a.setPressed(true),
+    ontouchmove: a.move,
+    onmousedown: e => e.srcElement.type !== 'submit' && a.setPressed(true),
     onmouseup: e => a.setPressed(false),
-    onmousemove: move(s, a),
+    onmousemove: a.move,
     oncreate: e => {
       window.onkeypress = e => {
         keys.indexOf(e.key) >= 0 &&
