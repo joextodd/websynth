@@ -1,4 +1,4 @@
-# [WebSynth](https://wasynth.web.app)
+# [WebSynth](https://synth.joextodd.com)
 
 ![Screenshot](./assets/screenshot.png)
 
