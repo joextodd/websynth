@@ -73,7 +73,7 @@ export const synth = {
     volume[s].disconnect(analyser)
   },
   setFrequency: (f, v) => {
-    osc[s].frequency.value = f
+    osc[s].frequency.setValueAtTime(f, audioCtx.currentTime)
     volume[s].gain.value = v ? v : volume[s].gain.value
   },
   setFilter: (f, v) => {
